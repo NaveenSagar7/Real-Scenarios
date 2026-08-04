@@ -3,7 +3,8 @@
 **Ticket:** SHOPNEST-4471
 **Component:** cart-service (Node.js/Express) on Kubernetes
 **Image:** `naveen352/issue-1:1.0`
-**Status:** Resolved
+**Status:** Resolved -
+This README documents deploying cart-service to Kubernetes via Helm, and a real incident hit during that rollout. After deploying, pods failed with a CreateContainerConfigError — I used kubectl describe pod to find a ConfigMap key referenced in deployment.yaml (DB_HOST) didn't match the actual key in configmap.yaml (DATABASE_HOST), and fixed it by correcting the configMapKeyRef.key. After that, pods went Running/Ready but were still unreachable — kubectl get endpoints showed <none>, which I traced to the Service's selector (app.kubernetes.io/name) not matching the pods' actual labels (app), and fixed it by aligning the Service selector to the pod labels. Both fixes were applied by editing the chart and re-running helm upgrade --install (not rollback, since that would only revert to an older broken revision).
 
 This document is both a **run guide** (how to deploy this service on any Kubernetes cluster) and an **incident record** (what broke, why, how it was found, and how to stop it from happening again). Read this top to bottom if you're seeing this service for the first time — or years from now trying to remember why these files look the way they do.
 
