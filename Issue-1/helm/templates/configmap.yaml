@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cart-service-config
+  namespace: shopnest-prod
+data:
+  DATABASE_HOST: {{ .Values.config.DATABASE_HOST | quote }}
+  API_TIMEOUT_MS: {{ .Values.config.API_TIMEOUT_MS | quote }}

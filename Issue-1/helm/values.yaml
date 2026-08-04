@@ -1,0 +1,33 @@
+replicaCount: 3
+
+image:
+  repository: naveen352/issue-1
+  tag: "1.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+config:
+  DATABASE_HOST: "shopnest-prod.cluster-xyz.us-east-1.rds.amazonaws.com"
+  API_TIMEOUT_MS: "8000"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+probes:
+  readiness:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  liveness:
+    path: /healthz
+    initialDelaySeconds: 15
+    periodSeconds: 20
