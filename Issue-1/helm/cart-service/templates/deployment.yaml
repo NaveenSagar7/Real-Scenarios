@@ -28,7 +28,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: cart-service-config
-                  key: DATABASE_HOST
+                  key: DB_HOST
             - name: API_TIMEOUT_MS
               valueFrom:
                 configMapKeyRef:
