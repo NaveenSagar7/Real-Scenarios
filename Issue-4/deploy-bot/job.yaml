@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: deploy-bot
+  namespace: shopnest-apps
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      serviceAccountName: deploy-bot-sa
+      restartPolicy: Never
+      containers:
+        - name: deploy-bot
+          image: bitnami/kubectl:1.29
+          command:
+            - "sh"
+            - "-c"
+            - "kubectl apply -f /manifests/deployment.yaml -n shopnest-apps"
+          volumeMounts:
+            - name: manifest
+              mountPath: /manifests
+      volumes:
+        - name: manifest
+          configMap:
+            name: promo-banner-manifest

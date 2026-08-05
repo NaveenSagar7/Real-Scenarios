@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promo-banner-manifest
+  namespace: shopnest-apps
+data:
+  deployment.yaml: |
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: promo-banner-service
+      namespace: shopnest-apps
+      labels:
+        app: promo-banner-service
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: promo-banner-service
+      template:
+        metadata:
+          labels:
+            app: promo-banner-service
+        spec:
+          containers:
+            - name: promo-banner-service
+              image: naveen352/notification-service:v1
+              ports:
+                - containerPort: 5000

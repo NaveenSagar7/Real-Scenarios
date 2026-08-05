@@ -1,0 +1,27 @@
+# This file mirrors the manifest embedded inside
+# deploy-bot/target-manifest-configmap.yaml — that ConfigMap is
+# what deploy-bot actually applies. This copy is kept here purely
+# for readability/reference.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promo-banner-service
+  namespace: shopnest-apps
+  labels:
+    app: promo-banner-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: promo-banner-service
+  template:
+    metadata:
+      labels:
+        app: promo-banner-service
+    spec:
+      containers:
+        - name: promo-banner-service
+          image: naveen352/notification-service:v1
+          ports:
+            - containerPort: 5000
