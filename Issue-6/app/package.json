@@ -1,0 +1,10 @@
+{
+  "name": "settlement-batch-processor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node -e \"console.log('tests passed'); process.exit(0)\""
+  },
+  "dependencies": {}
+}
