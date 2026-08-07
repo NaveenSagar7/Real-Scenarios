@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-audit
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: transaction-audit
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: transaction-audit
+  template:
+    metadata:
+      labels:
+        app: transaction-audit
+    spec:
+      serviceAccountName: transaction-audit-sa
+      containers:
+        - name: transaction-audit
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.containerPort }}
+          env:
+            - name: AUDIT_BUCKET
+              value: {{ .Values.auditBucket }}
+            - name: AWS_REGION
+              value: "ap-south-1"
+            - name: PORT
+              value: "{{ .Values.containerPort }}"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.containerPort }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

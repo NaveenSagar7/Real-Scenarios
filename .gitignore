@@ -1,3 +1,11 @@
 .claude/
-.terraform/
 .terraform.lock.hcl
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+
+# Helm
+.helm-cache/

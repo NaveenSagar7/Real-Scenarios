@@ -1,0 +1,5 @@
+apiVersion: v2
+name: transaction-audit
+description: FinEdge transaction-audit service (writes audit records to S3)
+version: 0.1.0
+appVersion: "1.0.0"
