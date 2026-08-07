@@ -69,6 +69,8 @@ Issue-008/
 
 1. `cd terraform/bootstrap && terraform init && terraform apply` — creates
    the remote state bucket + DynamoDB lock table.
+
+Pre-req : mkdir -p terraform/.helm-cache
 2. `cd ../` and run:
    ```
    terraform init \
