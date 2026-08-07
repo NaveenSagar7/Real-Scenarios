@@ -55,3 +55,31 @@ That's the full one-time setup — nothing else needs configuring before the tic
 ## Ticket: PAYFLOW-5019
 
 First build never completes — no clear pass or fail. A retry eventually errors out further along. Investigate using the build's **Console Output**. No manual workarounds — the pipeline itself needs to be fixed so `Build Now` reliably succeeds end to end.
+
+
+# PAYFLOW-5019 — Root Cause & Fix
+
+## Issue 1: Pipeline never started — stuck waiting
+
+**Cause:** `Jenkinsfile` used `agent { label 'docker' }`, but no agent/node in this Jenkins instance was labeled `docker`. Jenkins just sat waiting indefinitely for an executor that didn't exist.
+
+**Fix:** Changed to `agent any`, so it runs on the built-in node — which has Docker CLI available via the mounted `docker.sock`.
+
+---
+
+## Issue 2: Pipeline failed at the Push stage
+
+**Error:**
+```
+ERROR: Could not find credentials entry with ID 'dockerhub-cred'
+```
+
+**Cause:** `Jenkinsfile` referenced `credentialsId: 'dockerhub-cred'`, but the credential actually stored in Jenkins was saved with ID `dockerhub-creds`. Jenkins credential lookups are exact-match — the missing `s` meant no match was found.
+
+**Fix:** Corrected the reference to `credentialsId: 'dockerhub-creds'`.
+
+---
+
+## Result
+
+Pipeline ran end to end: Build → Test → Push, `Finished: SUCCESS`. Image confirmed pushed and pullable — `naveen352/settlement-batch-processor:latest`.
