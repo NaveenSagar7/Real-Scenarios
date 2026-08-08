@@ -1,46 +1,67 @@
-# notification-service
+# PAYFLOW-3107 — notification-service CI/CD
 
-Flask microservice — sends transaction notifications to merchants. Built and pushed to Docker Hub via GitHub Actions on every push to `main`.
+**Priority:** P2
+**Component:** GitHub Actions — `notification-service`
+**Status:** Resolved
 
-## Prerequisites (do these once, before triggering the workflow)
+---
 
-1. **Create a new GitHub repository** (public or private, your choice) and push this entire folder's contents to it as the initial commit on `main`.
+## 🎫 The Ticket
 
-   ```bash
-   cd notification-service
-   git init
-   git add .
-   git commit -m "Initial commit - notification-service"
-   git branch -M main
-   git remote add origin <your-repo-url>
-   git push -u origin main
-   ```
+**Company:** PayFlow — fintech company (same org as PAYFLOW-2298).
 
-2. **Add Docker Hub credentials as GitHub Actions secrets**, since the workflow needs to authenticate to push images:
-   - Go to your repo → Settings → Secrets and variables → Actions → New repository secret
-   - Add a secret named `DOCKERHUB_USERNAME` with your Docker Hub username (`naveen352`)
-   - Add a secret named `DOCKERHUB_TOKEN` with a Docker Hub access token (generate one at hub.docker.com → Account Settings → Security → New Access Token — don't use your account password)
+**Service:** `notification-service` — a Flask microservice that sends transaction alerts to merchants via webhook callbacks. Built and pushed to Docker Hub via GitHub Actions on every push to `main`, standardized on GitHub-native CI/CD for new greenfield services.
 
-3. That's it — no other setup required. GitHub Actions runners are fully hosted; you don't need to provision any infrastructure yourself.
+**What changed:** A junior engineer set up the initial `.github/workflows/ci-cd.yml` based on a template from another team's repo, and it merged to `main` after a light-touch review ("it's just CI config").
 
-## Ticket: PAYFLOW-3107
+**What happened:** Since merging, **two separate release attempts** failed to produce a usable image on Docker Hub.
 
-Two release attempts have failed to produce a usable image on Docker Hub since this workflow was merged. Investigate using the Actions run logs (repo → Actions tab → click the failed/problematic run → expand each step's logs).
+**Objective:** Get the workflow to reliably build, test, and push `notification-service` to Docker Hub on every push to `main`, with a working, pullable image tag. Investigate using the Actions run logs, not guesswork.
 
-Trigger a run by pushing any small change to `main`, or re-running the existing workflow from the Actions tab.
+---
 
+## 🚀 Deploy / Setup
 
-# PAYFLOW-3107 — Root Cause
+```bash
+cd notification-service
+git init
+git add .
+git commit -m "Initial commit - notification-service"
+git branch -M main
+git remote add origin <your-repo-url>
+git push -u origin main
+```
 
-**Issue:** `build-and-push` job failed at the "Log in to Docker Hub" step with `Error: Password required`.
+**Add two GitHub Actions secrets** (repo → Settings → Secrets and variables → Actions):
+- `DOCKERHUB_USERNAME` — your Docker Hub username
+- `DOCKERHUB_TOKEN` — a Docker Hub access token (Read & Write scope, not your account password)
 
-**How it was found:** Opened the failed run in the GitHub Actions tab → expanded the "Log in to Docker Hub" step logs → saw the login action received no password.
+No cluster, no cloud account — GitHub Actions runners are fully hosted.
 
-**Root cause:** The workflow referenced `secrets.DOCKER_HUB_TOKEN`, but the actual repository secret was named `DOCKERHUB_TOKEN` (no underscore between DOCKER and HUB). A mismatched secret name doesn't throw a "secret not found" error — GitHub Actions silently resolves it to an empty string, which only surfaces later as whatever error the consuming tool gives for a missing value.
+---
 
-**Fix:** Corrected the secret reference in `ci-cd.yml`:
+## 🔍 Commands to Start Investigating
+
+- Repo → **Actions** tab → click the failed run → expand each step's logs, particularly the **"Log in to Docker Hub"** step.
+- Trigger a fresh run by pushing any small change to `main`, or re-running from the Actions tab.
+
+---
+
+## ✅ Solution
+
+**Issue:** `build-and-push` job failed at "Log in to Docker Hub" with `Error: Password required`.
+
+**Root cause:** The workflow referenced `secrets.DOCKER_HUB_TOKEN`, but the actual repository secret was named `DOCKERHUB_TOKEN` (no underscore between DOCKER and HUB). A mismatched secret name doesn't throw a "secret not found" error — GitHub Actions silently resolves it to an empty string, which only surfaces downstream as whatever error the consuming tool gives for a missing value.
+
+**Fix:**
 ```yaml
 password: ${{ secrets.DOCKERHUB_TOKEN }}
 ```
 
-**Verification:** Re-ran the workflow — both jobs passed. Confirmed the image actually landed on Docker Hub via `docker pull naveen352/notification-service:latest` and checking the Tags page on hub.docker.com.
+**Verification:** Re-ran the workflow — both jobs passed. Confirmed the image actually landed via `docker pull naveen352/notification-service:latest` and checking the Tags page on hub.docker.com.
+
+---
+
+## 📎 Additional Notes
+
+Docker Hub **auto-creates** the target repository on first successful push, as long as the credentials used have write access — worth explicitly checking the resulting repo's visibility (public/private) afterward rather than assuming it defaults to what you want.
