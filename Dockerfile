@@ -14,7 +14,7 @@ COPY --from=build /install /usr/local
 WORKDIR /app
 COPY app/app.py .
 
-RUN mkdir -p /data/invoices
+RUN mkdir -p /data/invoices && chown -R appuser:appgroup /data/invoices
 
 USER appuser
 
