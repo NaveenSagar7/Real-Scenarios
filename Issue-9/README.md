@@ -25,10 +25,9 @@ customers hitting "download invoice" get failures. Support checked and the app's
 `/healthz` endpoint responds fine. The problem only shows up when someone actually
 tries to generate an invoice.
 
-Separately, the on-call engineer noticed the container currently running on the
-host is **not** running the image from yesterday's build — it looks like whatever
-was running before is still there, untouched. Nobody's sure if yesterday's deploy
-even reached the host.
+Separately, engineers have confirmed the Jenkins pipeline itself now correctly
+fails a build if the deploy command doesn't actually succeed on the host — so
+whatever's happening here, it's not the pipeline lying about success.
 
 ## 2. Objective
 
@@ -122,3 +121,84 @@ aws ssm list-command-invocations --instance-id <id> --details
 
 Trigger the pipeline, then bring me the Jenkins console output for each stage —
 paste what you actually see, not a summary.
+
+---
+
+## ✅ Solution
+
+### Issue 1 — deploy command fails, `no basic auth credentials`
+
+**Symptom:** the pipeline's Deploy stage now properly fails (it checks the SSM
+command's actual result, not just whether it was submitted). Console output
+shows something like:
+
+```
+pull access denied, repository does not exist or may require authorization:
+authorization failed: no basic auth credentials
+```
+
+**Root cause:** `terraform/iam.tf` — `app_instance_role` (the app host's
+instance role) only has `AmazonSSMManagedInstanceCore` attached. Jenkins can
+push to ECR because *it* runs under a completely separate role
+(`vantra-jenkins-controller-role`) with ECR push permissions — but nobody
+ever gave the **app host** permission to pull.
+
+**Fix — add to `terraform/iam.tf`:**
+```hcl
+resource "aws_iam_role_policy_attachment" "ecr_read" {
+  role       = aws_iam_role.app_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+```
+Then `terraform apply`. No instance replacement needed — EC2 refreshes role
+credentials via IMDS automatically within a few minutes.
+
+---
+
+### Issue 2 — `/healthz` is fine, but `POST /api/v1/invoices` returns 500
+
+**Symptom:** deploy succeeds, container is `Up` and healthy, but generating
+an invoice fails:
+```
+PermissionError: [Errno 13] Permission denied: '/data/invoices/...'
+```
+
+**Root cause — two layers:**
+
+1. `Dockerfile`: `USER appuser` runs before `/data/invoices` is created and
+   owned, so the image itself has a permission mismatch baked in.
+2. Even after fixing the image, `scripts/deploy_via_ssm.sh` bind-mounts the
+   **host's** `/data/invoices` over the container's (`-v /data/invoices:/data/invoices`).
+   Docker auto-created that host directory as `root` the first time this ran
+   (before it existed), and a bind mount always wins over whatever the image
+   itself contains — so an image-level fix alone never takes effect at runtime.
+
+**Fix — Dockerfile, correct order + create+chown as root before switching user:**
+```dockerfile
+RUN mkdir -p /data/invoices && chown -R appuser:appgroup /data/invoices
+USER appuser
+```
+
+**Then pick one for the host-side ownership mismatch:**
+
+- **Option 1 (quick, fragile):** find the UID `appuser` actually got assigned
+  and `chown` the host directory to match:
+  ```bash
+  sudo docker exec <container> id appuser        # e.g. uid=999
+  sudo chown -R 999:999 /data/invoices
+  sudo docker restart <container>
+  ```
+  Downside: `useradd -r` assigns an arbitrary system UID. A future image
+  rebuild can silently shift it, and you're back to this exact bug with no
+  code change to explain why.
+
+- **Option 2 (durable):** pin a fixed UID/GID in the Dockerfile so it never
+  drifts across rebuilds:
+  ```dockerfile
+  RUN groupadd -r -g 888 appgroup && useradd -r -u 888 -g appgroup appuser
+  RUN mkdir -p /data/invoices && chown -R appuser:appgroup /data/invoices
+  USER appuser
+  ```
+  `chown -R 888:888 /data/invoices` on the host once — it stays correct
+  across every future rebuild/restart, since the UID is now fixed by the
+  Dockerfile itself instead of auto-assigned by `useradd`.

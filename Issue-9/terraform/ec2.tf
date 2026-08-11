@@ -35,8 +35,21 @@ resource "aws_instance" "app_host" {
     #!/bin/bash
     set -e
     apt-get update -y
-    apt-get install -y docker.io
+    apt-get install -y docker.io unzip curl
+
+    # Don't assume the AMI ships amazon-ssm-agent pre-installed - ensure
+    # it explicitly, or a bad AMI choice leaves this host with no SSH
+    # key and no SSM path in at all.
+    snap install amazon-ssm-agent --classic || true
+    systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service || systemctl enable --now amazon-ssm-agent || true
+
     systemctl enable --now docker
+
+    # Needed on the host itself so `aws ecr get-login-password` (run by
+    # the deploy command) actually resolves.
+    curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+    unzip -o /tmp/awscliv2.zip -d /tmp
+    /tmp/aws/install
   EOF
 
   tags = {

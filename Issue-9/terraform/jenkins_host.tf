@@ -53,6 +53,10 @@ resource "aws_instance" "jenkins" {
     wait_for_apt_lock
     apt-get install -y openjdk-21-jre fontconfig docker.io git unzip curl
 
+    # Don't assume the AMI ships amazon-ssm-agent pre-installed.
+    snap install amazon-ssm-agent --classic || true
+    systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service || systemctl enable --now amazon-ssm-agent || true
+
     systemctl enable --now docker
 
     # --- Jenkins (Debian/Ubuntu repo) - 2026 signing key, the old

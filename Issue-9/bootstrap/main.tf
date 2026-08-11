@@ -17,7 +17,8 @@ provider "aws" {
 # ---------- Terraform remote state backend ----------
 
 resource "aws_s3_bucket" "tf_state" {
-  bucket = "vantra-terraform-state"
+  bucket        = "vantra-terraform-state"
+  force_destroy = true
 }
 
 resource "aws_s3_bucket_versioning" "tf_state" {
