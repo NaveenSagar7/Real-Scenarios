@@ -8,7 +8,11 @@ set -euo pipefail
 IMAGE_URI="$1"
 AWS_REGION="ap-south-1"
 
-INSTANCE_ID=$(cd ../terraform && terraform output -raw app_host_id)
+# Jenkins checks out a fresh workspace every build - .terraform/ isn't
+# committed to git, so this directory has never been initialized here.
+terraform -chdir=../terraform init -input=false
+
+INSTANCE_ID=$(terraform -chdir=../terraform output -raw app_host_id)
 
 echo "Deploying ${IMAGE_URI} to instance ${INSTANCE_ID}..."
 
