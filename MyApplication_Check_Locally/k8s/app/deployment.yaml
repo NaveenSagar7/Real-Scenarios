@@ -18,9 +18,7 @@ spec:
       serviceAccountName: daily-journal
       containers:
         - name: daily-journal
-          # Replace with the ecr_repository_url Terraform output, e.g.
-          # 593241949985.dkr.ecr.ap-south-1.amazonaws.com/myapp:latest
-          image: REPLACE_WITH_ECR_REPOSITORY_URL:latest
+          image: naveen352/eksdevopsdev:1.0
           ports:
             - containerPort: 8080
               name: http

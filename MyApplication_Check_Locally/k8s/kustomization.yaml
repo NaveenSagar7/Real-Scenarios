@@ -17,8 +17,3 @@ resources:
   # - ingress.yaml       # no ALB controller in the kodekloud lab
   - networkpolicy/app-netpol.yaml
   - networkpolicy/db-netpol.yaml
-
-images:
-  - name: REPLACE_WITH_ECR_REPOSITORY_URL
-    newName: naveen352/eksdevopsdev
-    newTag: "1.0"
