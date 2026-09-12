@@ -19,6 +19,19 @@ spec:
       serviceAccountName: postgres
       securityContext:
         fsGroup: 999
+      initContainers:
+        # hostPath volumes aren't covered by fsGroup's automatic ownership
+        # fixup, so fix it explicitly before postgres (runs as UID 999) tries
+        # to write PGDATA. Harmless no-op on volume types that already have
+        # correct ownership (e.g. EBS CSI on live EKS).
+        - name: fix-data-dir-perms
+          image: busybox:1.36
+          command: ["sh", "-c", "chown -R 999:999 /var/lib/postgresql/data"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
       containers:
         - name: postgres
           image: postgres:16-alpine
