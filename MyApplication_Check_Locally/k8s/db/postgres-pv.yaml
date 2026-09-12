@@ -21,6 +21,5 @@ spec:
         - matchExpressions:
             - key: kubernetes.io/hostname
               operator: In
-              # Replace with the node name from `kubectl get nodes`
               values:
-                - REPLACE_WITH_NODE_NAME
+                - node01
