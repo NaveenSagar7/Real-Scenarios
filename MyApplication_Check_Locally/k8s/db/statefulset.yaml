@@ -62,7 +62,7 @@ spec:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
-        storageClassName: ebs-gp3
+        storageClassName: local-storage
         resources:
           requests:
             storage: 10Gi

@@ -13,12 +13,14 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # The ALB (target-type: ip) sends traffic from its ENIs, which live in
-    # the VPC's public subnets, directly to pod IPs - so this has to be an
-    # ipBlock on the VPC CIDR rather than a podSelector/namespaceSelector.
+    # LAB ONLY: no ALB in the kodekloud lab, so traffic arrives via NodePort
+    # from outside the cluster instead of from ENIs on the VPC CIDR. Opened
+    # wide on port 8080 for testing. On live EKS, replace this ipBlock back
+    # with the VPC CIDR (the ALB, target-type: ip, sends traffic from its
+    # ENIs in the VPC's public subnets directly to pod IPs).
     - from:
         - ipBlock:
-            cidr: 10.20.0.0/16
+            cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
           port: 8080

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: daily-journal
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: daily-journal
   ports:

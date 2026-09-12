@@ -4,15 +4,16 @@ kind: Kustomization
 resources:
   - namespaces.yaml
   - db/storageclass.yaml
+  - db/postgres-pv.yaml
   - db/serviceaccount.yaml
-  - db/secret.yaml
+  # - db/secret.yaml    # created manually on the lab cluster
   - db/statefulset.yaml
   - db/service.yaml
   - app/serviceaccount.yaml
-  - app/secret.yaml
+  # - app/secret.yaml   # created manually on the lab cluster
   - app/configmap.yaml
   - app/deployment.yaml
   - app/service.yaml
-  - ingress.yaml
+  # - ingress.yaml       # no ALB controller in the kodekloud lab
   - networkpolicy/app-netpol.yaml
   - networkpolicy/db-netpol.yaml
