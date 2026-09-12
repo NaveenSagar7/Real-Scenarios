@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: daily-journal
+  namespace: myapp
+  labels:
+    app: daily-journal
+spec:
+  type: ClusterIP
+  selector:
+    app: daily-journal
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http

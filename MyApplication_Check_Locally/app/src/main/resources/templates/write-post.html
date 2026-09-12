@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daily Journal - Write about today</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+  <div class="banner">
+    <h1>Hi <span th:text="${user.name}">there</span>, how was today?</h1>
+    <p>Jot down a few thoughts about your day.</p>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h2>Write about today</h2>
+
+      <form th:action="@{/post/new}" th:object="${postForm}" method="post">
+        <div class="field">
+          <label for="content">What happened today?</label>
+          <textarea id="content" th:field="*{content}" placeholder="Today I..."></textarea>
+          <div class="error" th:if="${#fields.hasErrors('content')}" th:errors="*{content}"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save entry</button>
+        <a class="btn btn-secondary" th:href="@{/dashboard}">Skip for now</a>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

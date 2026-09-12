@@ -1,0 +1,46 @@
+# Applying this policy makes it the sole source of truth for traffic to/from
+# every pod in myapp: anything not explicitly allowed below is denied.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: daily-journal-netpol
+  namespace: myapp
+spec:
+  podSelector:
+    matchLabels:
+      app: daily-journal
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # The ALB (target-type: ip) sends traffic from its ENIs, which live in
+    # the VPC's public subnets, directly to pod IPs - so this has to be an
+    # ipBlock on the VPC CIDR rather than a podSelector/namespaceSelector.
+    - from:
+        - ipBlock:
+            cidr: 10.20.0.0/16
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Postgres in myapp-db
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: myapp-db
+          podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432

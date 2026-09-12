@@ -1,0 +1,73 @@
+name: Build and Deploy meter-reading-service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+      - "helm/**"
+      - ".github/workflows/deploy.yml"
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: vantra-meter-reading/meter-reading-service
+  EKS_CLUSTER: vantra-shared-eks
+  K8S_NAMESPACE: vantra-billing
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        run: |
+          docker build -t "$REGISTRY/$ECR_REPOSITORY:${GITHUB_SHA}" ./app
+          docker push "$REGISTRY/$ECR_REPOSITORY:${GITHUB_SHA}"
+
+      - name: Set up kubectl and Helm
+        uses: azure/setup-kubectl@v4
+
+      - name: Install Helm
+        run: |
+          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+          chmod +x get_helm.sh
+          ./get_helm.sh
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
+
+      - name: Ensure namespace exists
+        run: kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install meter-reading-service ./helm/meter-reading-service \
+            -n ${{ env.K8S_NAMESPACE }} \
+            -f ./helm/meter-reading-service/values.yaml \
+            --set image.repository=${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }} \
+            --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=${{ secrets.METER_READING_IRSA_ROLE_ARN }} \
+            --set env.meterBucket=${{ secrets.METER_BUCKET_NAME }} \
+            --set env.meterTable=${{ secrets.METER_TABLE_NAME }} \
+            --wait --timeout 3m
+
+      - name: Rollout status
+        run: kubectl rollout status deployment/meter-reading-service-meter-reading-service -n ${{ env.K8S_NAMESPACE }} --timeout=60s

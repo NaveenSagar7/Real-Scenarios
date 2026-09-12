@@ -1,0 +1,6 @@
+apiVersion: v2
+name: meter-reading-service
+description: Vantra meter-reading-ingest-service Helm chart
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

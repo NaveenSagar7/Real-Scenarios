@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daily Journal - Register</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+  <div class="banner">
+    <h1>Tell us about yourself</h1>
+    <p>Just once - we'll remember you by your PAN number next time.</p>
+  </div>
+  <div class="container">
+    <div class="card">
+      <a class="link-back" th:href="@{/}">&larr; back</a>
+      <h2>New user details</h2>
+
+      <div th:if="${errorMessage}" class="alert-error" th:text="${errorMessage}"></div>
+
+      <form th:action="@{/register}" th:object="${registerForm}" method="post">
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" type="text" th:field="*{name}" placeholder="e.g. Priya Sharma"/>
+          <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+        </div>
+
+        <div class="field">
+          <label for="age">Age</label>
+          <input id="age" type="number" th:field="*{age}" placeholder="e.g. 29"/>
+          <div class="error" th:if="${#fields.hasErrors('age')}" th:errors="*{age}"></div>
+        </div>
+
+        <div class="field">
+          <label for="dob">Date of Birth</label>
+          <input id="dob" type="date" th:field="*{dob}"/>
+          <div class="error" th:if="${#fields.hasErrors('dob')}" th:errors="*{dob}"></div>
+        </div>
+
+        <div class="field">
+          <label for="pan">PAN Number</label>
+          <input id="pan" type="text" th:field="*{pan}" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase"/>
+          <div class="error" th:if="${#fields.hasErrors('pan')}" th:errors="*{pan}"></div>
+          <div class="muted">Format: 5 letters, 4 digits, 1 letter. We never store the raw number - only a secure hash and a masked copy.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Continue</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

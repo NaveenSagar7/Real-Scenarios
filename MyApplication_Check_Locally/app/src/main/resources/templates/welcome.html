@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daily Journal - Welcome</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+  <div class="banner">
+    <h1>Welcome to Daily Journal</h1>
+    <p>A tiny, private place to jot down how today went.</p>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h2>Have you already been to this application?</h2>
+      <p class="muted">Returning users just need their PAN number to pick up where they left off. New here? Tell us a bit about yourself first.</p>
+      <div class="choice-row">
+        <a class="btn btn-primary" th:href="@{/returning}">Yes, I've been here before</a>
+        <a class="btn btn-secondary" th:href="@{/register}">No, I'm new</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

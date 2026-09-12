@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp
+  labels:
+    name: myapp
+    tier: application
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-db
+  labels:
+    name: myapp-db
+    tier: database

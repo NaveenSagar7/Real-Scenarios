@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daily Journal - Welcome Back</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+  <div class="banner">
+    <h1>Welcome back</h1>
+    <p>Enter your PAN number to pick up where you left off.</p>
+  </div>
+  <div class="container">
+    <div class="card">
+      <a class="link-back" th:href="@{/}">&larr; back</a>
+      <h2>Returning user</h2>
+
+      <div th:if="${errorMessage}" class="alert-error" th:text="${errorMessage}"></div>
+
+      <form th:action="@{/returning}" th:object="${returningForm}" method="post">
+        <div class="field">
+          <label for="pan">PAN Number</label>
+          <input id="pan" type="text" th:field="*{pan}" maxlength="10" placeholder="ABCDE1234F" style="text-transform:uppercase"/>
+          <div class="error" th:if="${#fields.hasErrors('pan')}" th:errors="*{pan}"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Continue</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,49 @@
+replicaCount: 2
+
+image:
+  repository: REPLACE_WITH_ECR_REPO_URL
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: meter-reading-service
+  annotations:
+    eks.amazonaws.com/role-arn: "REPLACE_WITH_IRSA_ROLE_ARN"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+  host: meter-reads.vantra.internal
+
+env:
+  meterBucket: "REPLACE_WITH_S3_BUCKET_NAME"
+  meterTable: "REPLACE_WITH_DYNAMODB_TABLE_NAME"
+  awsRegion: "ap-south-1"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
+
+probes:
+  readiness:
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 10
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20

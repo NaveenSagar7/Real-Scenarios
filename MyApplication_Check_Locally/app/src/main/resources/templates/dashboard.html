@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Daily Journal - Dashboard</title>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+  <div class="banner">
+    <h1>Welcome back, <span th:text="${user.name}">there</span></h1>
+    <p>PAN on file: <span th:text="${user.panMasked}">XXXXX1234F</span></p>
+  </div>
+  <div class="container">
+    <div class="top-actions">
+      <form th:action="@{/logout}" method="post">
+        <button type="submit" class="link-back" style="background:none;border:none;cursor:pointer;">Log out</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>What would you like to do?</h2>
+      <div class="choice-row">
+        <a class="btn btn-primary" th:href="@{/post/new}">Add a new post</a>
+        <a class="btn btn-accent" th:href="@{/posts}">View my previous posts</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

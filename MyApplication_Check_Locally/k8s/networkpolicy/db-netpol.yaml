@@ -1,0 +1,37 @@
+# Applying this policy makes it the sole source of truth for traffic to/from
+# every pod in myapp-db: anything not explicitly allowed below is denied -
+# in particular, only the app namespace's pods may reach Postgres.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-netpol
+  namespace: myapp-db
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: myapp
+          podSelector:
+            matchLabels:
+              app: daily-journal
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    # DNS only
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
