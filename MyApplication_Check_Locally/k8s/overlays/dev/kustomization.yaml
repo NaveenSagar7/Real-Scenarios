@@ -1,0 +1,50 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# App-tier resources move into this environment's own namespace (myapp-dev).
+# db-tier resources are left untouched by every overlay - Postgres stays in
+# the single shared myapp-db namespace for all three environments (there's
+# only one hostPath PV in this lab anyway, so it couldn't be split even if
+# we wanted to).
+patches:
+  - target:
+      kind: Deployment
+      name: daily-journal
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: myapp-dev
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: ServiceAccount
+      name: daily-journal
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: myapp-dev
+  - target:
+      kind: ConfigMap
+      name: app-config
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: myapp-dev
+  - target:
+      kind: Service
+      name: daily-journal
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: myapp-dev
+  - target:
+      kind: NetworkPolicy
+      name: daily-journal-netpol
+    patch: |
+      - op: replace
+        path: /metadata/namespace
+        value: myapp-dev

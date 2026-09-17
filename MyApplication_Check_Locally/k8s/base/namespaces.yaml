@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-dev
+  labels:
+    name: myapp-dev
+    tier: application
+    environment: dev
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-qa
+  labels:
+    name: myapp-qa
+    tier: application
+    environment: qa
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-prod
+  labels:
+    name: myapp-prod
+    tier: application
+    environment: prod
+---
+# Single shared Postgres namespace for all three app environments - matches
+# the single hostPath PV (db/postgres-pv.yaml, pinned to node01) which only
+# supports one Postgres instance in this lab anyway.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapp-db
+  labels:
+    name: myapp-db
+    tier: database

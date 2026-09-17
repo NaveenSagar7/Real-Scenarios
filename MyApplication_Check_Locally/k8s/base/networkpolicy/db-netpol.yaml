@@ -1,6 +1,8 @@
 # Applying this policy makes it the sole source of truth for traffic to/from
 # every pod in myapp-db: anything not explicitly allowed below is denied -
-# in particular, only the app namespace's pods may reach Postgres.
+# in particular, only daily-journal pods in one of the three app namespaces
+# may reach Postgres. One shared Postgres serves all three environments, so
+# all three app namespaces need to be listed here explicitly.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -17,7 +19,19 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: myapp
+              kubernetes.io/metadata.name: myapp-dev
+          podSelector:
+            matchLabels:
+              app: daily-journal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: myapp-qa
+          podSelector:
+            matchLabels:
+              app: daily-journal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: myapp-prod
           podSelector:
             matchLabels:
               app: daily-journal
