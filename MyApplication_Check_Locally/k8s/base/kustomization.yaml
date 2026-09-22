@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - namespaces.yaml
+  # - namespaces.yaml #Need to create manually and generate secrets before applying the kustomization.yaml
   - db/storageclass.yaml
   - db/postgres-pv.yaml
   - db/serviceaccount.yaml
