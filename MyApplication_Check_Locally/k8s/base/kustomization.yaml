@@ -17,3 +17,8 @@ resources:
   # - ingress.yaml       # no ALB controller in the kodekloud lab
   - networkpolicy/app-netpol.yaml
   - networkpolicy/db-netpol.yaml
+  # Requires the kube-prometheus-stack CRDs (ServiceMonitor, PrometheusRule)
+  # and its Grafana dashboard sidecar to already be installed in `monitoring`.
+  - monitoring/servicemonitor-postgres.yaml
+  - monitoring/prometheusrule-myapp.yaml
+  - monitoring/grafana-dashboard-myapp.yaml

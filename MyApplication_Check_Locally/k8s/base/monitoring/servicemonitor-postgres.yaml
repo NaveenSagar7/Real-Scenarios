@@ -1,0 +1,24 @@
+# Tells the kube-prometheus-stack Prometheus Operator to scrape the
+# postgres-exporter sidecar. The `release: monitoring` label is required by
+# the chart's default serviceMonitorSelector (matches its Helm release
+# name) - if your Prometheus CR uses a different selector, check with:
+#   kubectl get prometheus -n monitoring -o jsonpath='{.items[0].spec.serviceMonitorSelector}'
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: postgres-exporter
+  namespace: myapp-db
+  labels:
+    app: postgres
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: postgres
+  namespaceSelector:
+    matchNames:
+      - myapp-db
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

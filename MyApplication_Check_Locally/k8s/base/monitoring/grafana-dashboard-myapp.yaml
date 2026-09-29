@@ -1,0 +1,134 @@
+# Dashboard-as-code: kube-prometheus-stack's Grafana ships with a sidecar
+# (grafana-sc-dashboard) that watches every namespace for ConfigMaps labeled
+# grafana_dashboard: "1" and auto-imports/updates them - no manual "Import
+# dashboard" click in the UI, and it stays in sync with this file on re-apply.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-myapp
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  myapp-overview.json: |
+    {
+      "title": "MyApp Overview (daily-journal + postgres)",
+      "uid": "myapp-overview",
+      "schemaVersion": 39,
+      "version": 1,
+      "editable": true,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Pod Restarts (15m increase)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (namespace, pod) (increase(kube_pod_container_status_restarts_total{namespace=~\"myapp-.*\"}[15m]))",
+              "legendFormat": "{{namespace}}/{{pod}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Pods Not Ready",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_ready{namespace=~\"myapp-.*\", condition=\"false\"})",
+              "legendFormat": "not ready",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "daily-journal CPU usage vs limit",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"myapp-dev\", container=\"daily-journal\"}[5m]))",
+              "legendFormat": "usage (cores)",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_limits{namespace=\"myapp-dev\", container=\"daily-journal\", resource=\"cpu\"})",
+              "legendFormat": "limit (cores)",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "daily-journal Memory usage vs limit",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"myapp-dev\", container=\"daily-journal\"})",
+              "legendFormat": "usage (bytes)",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_limits{namespace=\"myapp-dev\", container=\"daily-journal\", resource=\"memory\"})",
+              "legendFormat": "limit (bytes)",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Postgres Up",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 16, "w": 6, "h": 8 },
+          "targets": [
+            {
+              "expr": "pg_up",
+              "legendFormat": "up",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "green", "value": 1 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "Postgres Active Connections",
+          "type": "timeseries",
+          "gridPos": { "x": 6, "y": 16, "w": 18, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(pg_stat_database_numbackends{datname=\"dailyjournal\"})",
+              "legendFormat": "active connections",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

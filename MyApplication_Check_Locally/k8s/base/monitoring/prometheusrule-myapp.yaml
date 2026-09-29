@@ -1,0 +1,88 @@
+# Service-owner alerts for daily-journal + postgres, on top of the generic
+# cluster-health rules kube-prometheus-stack already ships. Same
+# `release: monitoring` labeling caveat as servicemonitor-postgres.yaml -
+# verify against your Prometheus CR's ruleSelector if these don't load:
+#   kubectl get prometheus -n monitoring -o jsonpath='{.items[0].spec.ruleSelector}'
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: myapp-alerts
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: myapp.rules
+      rules:
+        - alert: MyAppPodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace=~"myapp-.*"}[15m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting repeatedly"
+            description: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} has restarted more than 3 times in the last 15 minutes."
+
+        - alert: MyAppPodNotReady
+          expr: |
+            sum by (namespace, pod) (kube_pod_status_ready{namespace=~"myapp-.*", condition="false"}) == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has not been ready for 10m"
+            description: "Check `kubectl describe pod -n {{ $labels.namespace }} {{ $labels.pod }}` for the cause (image pull, probe failure, scheduling)."
+
+        - alert: DailyJournalDeploymentReplicasMismatch
+          expr: |
+            kube_deployment_spec_replicas{namespace="myapp-dev", deployment="daily-journal"}
+              != kube_deployment_status_replicas_available{namespace="myapp-dev", deployment="daily-journal"}
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "daily-journal doesn't have the desired number of available replicas"
+            description: "Desired vs. available replica count for deployment/daily-journal in myapp-dev has differed for 10 minutes."
+
+        - alert: MyAppHighMemoryUsage
+          expr: |
+            sum by (namespace, pod, container) (container_memory_working_set_bytes{namespace=~"myapp-.*", container!="", container!="POD"})
+              / sum by (namespace, pod, container) (kube_pod_container_resource_limits{namespace=~"myapp-.*", resource="memory"})
+              > 0.9
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is near its memory limit"
+            description: "Working set memory has been above 90% of the container's memory limit for 10 minutes - at risk of OOMKill."
+
+        - alert: MyAppHighCPUThrottling
+          expr: |
+            rate(container_cpu_cfs_throttled_periods_total{namespace=~"myapp-.*", container!="", container!="POD"}[5m])
+              / rate(container_cpu_cfs_periods_total{namespace=~"myapp-.*", container!="", container!="POD"}[5m])
+              > 0.25
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.namespace }}/{{ $labels.pod }} ({{ $labels.container }}) is being CPU throttled"
+            description: "More than 25% of CPU periods were throttled over 15 minutes - consider raising the CPU limit."
+
+        - alert: PostgresExporterDown
+          expr: up{job="postgres-exporter"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "postgres-exporter target is down"
+            description: "Prometheus can't scrape the postgres-exporter sidecar in myapp-db - metrics and the alerts below it are blind until this recovers."
+
+        - alert: PostgresDatabaseDown
+          expr: pg_up == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Postgres is down"
+            description: "pg_up has been 0 for 2 minutes - the postgres-exporter sidecar can't connect to the postgres container in the same pod."
